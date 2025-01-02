@@ -46,7 +46,7 @@ pub fn main() !void {
 
     // Uncomment this block to pass the first stage
     if (file_contents.len > 0) {
-        print("Scanner not implemented");
+        print("Scanner not implemented", .{});
         std.process.exit(0);
     } else {
         try std.io.getStdOut().writer().print("EOF  null\n", .{}); // Placeholder, remove this line when implementing the scanner
