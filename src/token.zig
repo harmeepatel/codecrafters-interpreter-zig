@@ -1,5 +1,5 @@
 const std = @import("std");
-const print = std.debug.print;
+const dbg_print = std.debug.print;
 const page_alloc = std.heap.page_allocator;
 
 pub const TokenType = enum {
@@ -54,9 +54,56 @@ pub const Token = struct {
     lexeme: []const u8,
     literal: []const u8,
     line: usize,
+
+    pub fn New(ttype: TokenType, lexeme: []const u8, literal: []const u8) *Token {
+        return &Token{
+            .type = ttype,
+            .lexeme = lexeme,
+            .literal = literal,
+            .line = 1,
+        };
+    }
+
+    pub fn print(self: Token) void {
+        switch (self.type) {
+            .STRING => {
+                dbg_print("{s} {s} {s}", .{ "STRING", self.lexeme, self.literal });
+            },
+            else => dbg_print("unknown character.", .{}),
+        }
+    }
+    // func (t *Token) print() {
+    // 	tl := NULL
+    // 	tle := t.Lexeme
+    // 	if t.Literal != "" {
+    // 		tl = t.Literal
+    // 	}
+    // 	switch t.Type.Name {
+    // 	case "STRING":
+    // 		tle = `"` + tle + `"`
+    // 		break
+    // 	case "NUMBER":
+    // 		dn, err := strconv.ParseFloat(t.Lexeme, 64)
+    // 		if err != nil {
+    // 			os.Exit(65)
+    // 		}
+    // 		tdn := math.Trunc(dn)
+    // 		if dn == tdn {
+    // 			if len(t.Lexeme)+1 > len(strconv.FormatFloat(dn, 'g', -1, 64)) {
+    // 			}
+    // 			tl = fmt.Sprintf("%.1f", dn)
+    // 		} else {
+    // 			tl = strconv.FormatFloat(dn, 'g', -1, 64)
+    // 		}
+    // 		tle = t.Lexeme
+    // 		break
+    // 	}
+    // 	// println("print: %s  %s  %s", t.Type.Name, tle, tl)
+    // 	fmt.Println(t.Type.Name, tle, tl)
+    // }
 };
 
-pub const TokenList = std.ArrayList(Token).init();
+pub const TokenList = std.ArrayList(Token).init(page_alloc);
 
 // func (tt TokenType) char1() rune {
 // 	switch tt.Name {
