@@ -190,11 +190,11 @@ const Scanner = struct {
         };
     }
 
-    fn peek(self: Scanner) ?u8 {
+    fn peek(self: Scanner, char: u8) bool {
         if (self.icurr < self.source.len - 1) {
-            return self.source[self.icurr + 1];
+            return char == self.source[self.icurr + 1];
         }
-        return null;
+        return false;
     }
 
     pub fn print(self: Scanner) !void {
@@ -209,13 +209,16 @@ const Scanner = struct {
     }
 
     pub fn scan(self: *Scanner) !void {
-        for (self.source, 0..) |char, i| {
+        CharLoop: for (self.source, 0..) |char, i| {
             self.icurr = i;
             if (self.skipChar) {
                 self.skipChar = false;
                 continue;
             }
-            // while (self.skipNext
+            while (self.skipNext > 0) {
+                self.skipNext -= 1;
+                continue :CharLoop;
+            }
             switch (char) {
                 '\n' => self.line += 1,
                 '(' => try self.tokenList.append(Token.New(TokenType.LEFT_PAREN, "(", Literal.None(), self.line)),
@@ -230,45 +233,67 @@ const Scanner = struct {
                 '*' => try self.tokenList.append(Token.New(TokenType.STAR, "*", Literal.None(), self.line)),
                 '\t', ' ' => {},
                 '=' => {
-                    if (self.peek()) |nxt| {
-                        if (nxt == '=') {
-                            try self.tokenList.append(Token.New(TokenType.EQUAL_EQUAL, "==", Literal.None(), self.line));
-                            self.skipChar = true;
-                            continue;
-                        }
+                    if (self.peek('=')) {
+                        try self.tokenList.append(Token.New(TokenType.EQUAL_EQUAL, "==", Literal.None(), self.line));
+                        self.skipChar = true;
+                        continue;
                     }
                     try self.tokenList.append(Token.New(TokenType.EQUAL, "=", Literal.None(), self.line));
                 },
                 '!' => {
-                    if (self.peek()) |nxt| {
-                        if (nxt == '=') {
-                            try self.tokenList.append(Token.New(TokenType.BANG_EQUAL, "!=", Literal.None(), self.line));
-                            self.skipChar = true;
-                            continue;
-                        }
+                    if (self.peek('=')) {
+                        try self.tokenList.append(Token.New(TokenType.BANG_EQUAL, "!=", Literal.None(), self.line));
+                        self.skipChar = true;
+                        continue;
                     }
                     try self.tokenList.append(Token.New(TokenType.BANG, "!", Literal.None(), self.line));
                 },
                 '<' => {
-                    if (self.peek()) |nxt| {
-                        if (nxt == '=') {
-                            try self.tokenList.append(Token.New(TokenType.LESS_EQUAL, "<=", Literal.None(), self.line));
-                            self.skipChar = true;
-                            continue;
-                        }
+                    if (self.peek('=')) {
+                        try self.tokenList.append(Token.New(TokenType.LESS_EQUAL, "<=", Literal.None(), self.line));
+                        self.skipChar = true;
+                        continue;
                     }
                     try self.tokenList.append(Token.New(TokenType.LESS, "<", Literal.None(), self.line));
                 },
                 '>' => {
-                    if (self.peek()) |nxt| {
-                        if (nxt == '=') {
-                            try self.tokenList.append(Token.New(TokenType.GREATER_EQUAL, ">=", Literal.None(), self.line));
-                            self.skipChar = true;
-                            continue;
-                        }
+                    if (self.peek('=')) {
+                        try self.tokenList.append(Token.New(TokenType.GREATER_EQUAL, ">=", Literal.None(), self.line));
+                        self.skipChar = true;
+                        continue;
                     }
                     try self.tokenList.append(Token.New(TokenType.GREATER, ">", Literal.None(), self.line));
                 },
+                '/' => {
+                    if (self.peek('/')) {
+                        for (self.source[self.icurr..]) |c| {
+                            switch (c) {
+                                '\n' => {
+                                    break;
+                                },
+                                else => self.skipNext += 1,
+                            }
+                        }
+                        continue;
+                    }
+                    try self.tokenList.append(Token.New(TokenType.SLASH, "/", Literal.None(), self.line));
+                },
+                // case char == SLASH.char1():
+                // 	if COMMENT.char2() >= 0 && s.peek() == COMMENT.char2() {
+                // 	SkipTillNL:
+                // 		for _, r := range s.Source[iChar:] {
+                // 			switch r {
+                // 			case NEW_LINE.char1():
+                // 				break SkipTillNL
+                // 			default:
+                // 				s.SkipNext++
+                // 				break
+                // 			}
+                // 		}
+                // 		continue
+                // 	}
+                // 	s.TokenList.append(Token{SLASH, SLASH.Literal, NULL, s.Line})
+                // 	break
                 else => {
                     try stderr_writer.print("[line {}] Error: Unexpected character: {c}\n", .{ self.line, char });
                     self.scanError = error.UnexpectedError;
