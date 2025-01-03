@@ -269,6 +269,7 @@ const Scanner = struct {
                         for (self.source[self.icurr..]) |c| {
                             switch (c) {
                                 '\n' => {
+                                    self.line += 1;
                                     break;
                                 },
                                 else => self.skipNext += 1,
