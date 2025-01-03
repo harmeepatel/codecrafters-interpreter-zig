@@ -1,6 +1,7 @@
 const std = @import("std");
 const dbg_print = std.debug.print;
 const page_alloc = std.heap.page_allocator;
+const stdout_writer = std.io.getStdOut().writer();
 
 const Self = @This();
 type: TokenType,
@@ -87,12 +88,12 @@ pub const Literal = union(enum) {
     }
 };
 
-pub fn New(ttype: TokenType, lexeme: []const u8, literal: Literal) Self {
+pub fn New(ttype: TokenType, lexeme: []const u8, literal: Literal, line: usize) Self {
     return Self{
         .type = ttype,
         .lexeme = lexeme,
         .literal = literal,
-        .line = 1,
+        .line = line,
     };
 }
 
@@ -105,11 +106,11 @@ fn parseNumber(num: []const u8) f64 {
     };
 }
 
-pub fn print(self: Self) void {
-    dbg_print("{s} ", .{@tagName(self.type)});
+pub fn print(self: Self) !void {
+    try stdout_writer.print("{s} ", .{@tagName(self.type)});
     switch (self.type) {
-        .STRING => dbg_print("\"{s}\" {s}", .{ self.lexeme, self.literal.toString() }),
-        else => dbg_print("{s} {s}", .{ self.lexeme, self.literal.toString() }),
+        .STRING => try stdout_writer.print("\"{s}\" {s}", .{ self.lexeme, self.literal.toString() }),
+        else => try stdout_writer.print("{s} {s}", .{ self.lexeme, self.literal.toString() }),
     }
     dbg_print("\n", .{});
 }
