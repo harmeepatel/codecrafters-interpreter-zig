@@ -1,5 +1,5 @@
 const std = @import("std");
-// const Scanner = @import("Scanner.zig");
+const Scanner = @import("Scanner.zig");
 const dbg_print = std.debug.print;
 const page_alloc = std.heap.page_allocator;
 
