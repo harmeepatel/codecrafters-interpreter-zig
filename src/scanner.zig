@@ -128,7 +128,7 @@ pub fn scan(self: *Self) !void {
             '"' => {
                 const start: usize = self.icurr + 1;
                 var end: usize = start;
-                while (end <= self.source.len) : (end += 1) {
+                while (end < self.source.len) : (end += 1) {
                     const c = self.source[end];
                     self.skipNext += 1;
                     if (c == '\n') {
