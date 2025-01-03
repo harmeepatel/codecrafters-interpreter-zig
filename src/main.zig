@@ -42,10 +42,37 @@ pub fn main() !void {
     const file = try filename.toOwnedSlice();
     defer page_alloc.free(file);
 
-    const file_contents = try std.fs.cwd().readFileAlloc(page_alloc, file, std.math.maxInt(usize)); defer page_alloc.free(file_contents);
+    const file_contents = try std.fs.cwd().readFileAlloc(page_alloc, file, std.math.maxInt(usize));
+    defer page_alloc.free(file_contents);
 
     // var scanner = Scanner.New(file_contents);
     // _ = try scanner.scan();
     // scanner.print();
 
+    if (file_contents.len > 0) {
+        for (file_contents) |c| {
+            const gotToken = scanToken(c);
+            try dbg_print("{s}\n", .{gotToken});
+        }
+        try dbg_print("EOF  null\n", .{});
+    } else {
+        try std.io.getStdOut().writer().print("EOF  null\n", .{}); // Placeholder, remove this line when implementing the scanner
+        try dbg_print("EOF  null\n", .{});
+    }
+}
+fn scanToken(token: u8) []const u8 {
+    const outString = switch (token) {
+        '(' => "LEFT_PAREN ( null",
+        ')' => "RIGHT_PAREN ) null",
+        '{' => "LEFT_BRACE { null",
+        '}' => "RIGHT_BRACE } null",
+        '.' => "DOT ) null",
+        ',' => "COMMA { null",
+        '-' => "MINUS } null",
+        '+' => "PLUS ) null",
+        ';' => "SEMICOLON { null",
+        '*' => "STAR } null",
+        else => "END",
+    };
+    return outString;
 }
