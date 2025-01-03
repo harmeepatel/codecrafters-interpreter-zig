@@ -1,5 +1,5 @@
 const std = @import("std");
-const Scanner = @import("Scanner.zig");
+// const Scanner = @import("Scanner.zig");
 const dbg_print = std.debug.print;
 const page_alloc = std.heap.page_allocator;
 
@@ -44,8 +44,8 @@ pub fn main() !void {
 
     const file_contents = try std.fs.cwd().readFileAlloc(page_alloc, file, std.math.maxInt(usize)); defer page_alloc.free(file_contents);
 
-    var scanner = Scanner.New(file_contents);
-    _ = try scanner.scan();
-    scanner.print();
+    // var scanner = Scanner.New(file_contents);
+    // _ = try scanner.scan();
+    // scanner.print();
 
 }
