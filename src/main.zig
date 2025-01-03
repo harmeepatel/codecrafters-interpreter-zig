@@ -59,12 +59,12 @@ const Token = struct {
     literal: Literal,
     line: usize,
 
-    pub fn New(ttype: TokenType, lexeme: []const u8, literal: Literal) Token {
+    pub fn New(ttype: TokenType, lexeme: []const u8, literal: Literal, line: usize) Token {
         return Token{
             .type = ttype,
             .lexeme = lexeme,
             .literal = literal,
-            .line = 1,
+            .line = line,
         };
     }
     pub fn print(self: Token) !void {
@@ -190,10 +190,11 @@ const Scanner = struct {
         };
     }
 
-    fn peek(self: Scanner) u8 {
-        if (self.icrr < self.source.len - 1) {
+    fn peek(self: Scanner) ?u8 {
+        if (self.icurr < self.source.len - 1) {
             return self.source[self.icurr + 1];
         }
+        return null;
     }
 
     pub fn print(self: Scanner) !void {
@@ -216,24 +217,64 @@ const Scanner = struct {
             }
             // while (self.skipNext
             switch (char) {
-                '(' => try self.tokenList.append(Token.New(TokenType.LEFT_PAREN, "(", Literal.None())),
-                ')' => try self.tokenList.append(Token.New(TokenType.RIGHT_PAREN, ")", Literal.None())),
-                '{' => try self.tokenList.append(Token.New(TokenType.LEFT_BRACE, "{", Literal.None())),
-                '}' => try self.tokenList.append(Token.New(TokenType.RIGHT_BRACE, "}", Literal.None())),
-                ',' => try self.tokenList.append(Token.New(TokenType.COMMA, ",", Literal.None())),
-                '.' => try self.tokenList.append(Token.New(TokenType.DOT, ".", Literal.None())),
-                '-' => try self.tokenList.append(Token.New(TokenType.MINUS, "-", Literal.None())),
-                '+' => try self.tokenList.append(Token.New(TokenType.PLUS, "+", Literal.None())),
-                ';' => try self.tokenList.append(Token.New(TokenType.SEMICOLON, ";", Literal.None())),
-                '*' => try self.tokenList.append(Token.New(TokenType.STAR, "*", Literal.None())),
+                '\n' => self.line += 1,
+                '(' => try self.tokenList.append(Token.New(TokenType.LEFT_PAREN, "(", Literal.None(), self.line)),
+                ')' => try self.tokenList.append(Token.New(TokenType.RIGHT_PAREN, ")", Literal.None(), self.line)),
+                '{' => try self.tokenList.append(Token.New(TokenType.LEFT_BRACE, "{", Literal.None(), self.line)),
+                '}' => try self.tokenList.append(Token.New(TokenType.RIGHT_BRACE, "}", Literal.None(), self.line)),
+                ',' => try self.tokenList.append(Token.New(TokenType.COMMA, ",", Literal.None(), self.line)),
+                '.' => try self.tokenList.append(Token.New(TokenType.DOT, ".", Literal.None(), self.line)),
+                '-' => try self.tokenList.append(Token.New(TokenType.MINUS, "-", Literal.None(), self.line)),
+                '+' => try self.tokenList.append(Token.New(TokenType.PLUS, "+", Literal.None(), self.line)),
+                ';' => try self.tokenList.append(Token.New(TokenType.SEMICOLON, ";", Literal.None(), self.line)),
+                '*' => try self.tokenList.append(Token.New(TokenType.STAR, "*", Literal.None(), self.line)),
+                '\t', ' ' => {},
+                '=' => {
+                    if (self.peek()) |nxt| {
+                        if (nxt == '=') {
+                            try self.tokenList.append(Token.New(TokenType.EQUAL_EQUAL, "==", Literal.None(), self.line));
+                            self.skipChar = true;
+                            continue;
+                        }
+                    }
+                    try self.tokenList.append(Token.New(TokenType.EQUAL, "=", Literal.None(), self.line));
+                },
+                '!' => {
+                    if (self.peek()) |nxt| {
+                        if (nxt == '=') {
+                            try self.tokenList.append(Token.New(TokenType.BANG_EQUAL, "!=", Literal.None(), self.line));
+                            self.skipChar = true;
+                            continue;
+                        }
+                    }
+                    try self.tokenList.append(Token.New(TokenType.BANG, "!", Literal.None(), self.line));
+                },
+                '<' => {
+                    if (self.peek()) |nxt| {
+                        if (nxt == '=') {
+                            try self.tokenList.append(Token.New(TokenType.LESS_EQUAL, "<=", Literal.None(), self.line));
+                            self.skipChar = true;
+                            continue;
+                        }
+                    }
+                    try self.tokenList.append(Token.New(TokenType.LESS, "<", Literal.None(), self.line));
+                },
+                '>' => {
+                    if (self.peek()) |nxt| {
+                        if (nxt == '=') {
+                            try self.tokenList.append(Token.New(TokenType.GREATER_EQUAL, ">=", Literal.None(), self.line));
+                            self.skipChar = true;
+                            continue;
+                        }
+                    }
+                    try self.tokenList.append(Token.New(TokenType.GREATER, ">", Literal.None(), self.line));
+                },
                 else => {
                     try stderr_writer.print("[line {}] Error: Unexpected character: {c}\n", .{ self.line, char });
                     self.scanError = error.UnexpectedError;
                 },
-                '\t', ' ' => {},
-                '\n' => self.line += 1,
             }
         }
-        try self.tokenList.append(Token.New(TokenType.EOF, "", Literal.None()));
+        try self.tokenList.append(Token.New(TokenType.EOF, "", Literal.None(), self.line));
     }
 };
