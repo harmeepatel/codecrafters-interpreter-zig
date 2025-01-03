@@ -279,22 +279,30 @@ const Scanner = struct {
                     }
                     try self.tokenList.append(Token.New(TokenType.SLASH, "/", Literal.None(), self.line));
                 },
-                // case char == SLASH.char1():
-                // 	if COMMENT.char2() >= 0 && s.peek() == COMMENT.char2() {
-                // 	SkipTillNL:
-                // 		for _, r := range s.Source[iChar:] {
-                // 			switch r {
-                // 			case NEW_LINE.char1():
-                // 				break SkipTillNL
-                // 			default:
-                // 				s.SkipNext++
-                // 				break
-                // 			}
-                // 		}
-                // 		continue
-                // 	}
-                // 	s.TokenList.append(Token{SLASH, SLASH.Literal, NULL, s.Line})
-                // 	break
+                '"' => {
+                },
+
+		// case char == DOUBLE_QUOTE.char1():
+		// 	t := new(Token)
+		// 	t.Type = STRING
+		// 	var buf bytes.Buffer
+		// 	var i = iChar + 1
+		// 	for ; i < len(s.Source) && rune(s.Source[i]) != DOUBLE_QUOTE.char1(); i++ {
+		// 		r := rune(s.Source[i])
+		// 		buf.WriteRune(r)
+		// 		s.SkipNext++
+		// 	}
+		// 	s.SkipNext++
+		// 	if i >= len(s.Source) {
+		// 		println("[line %d] Error: Unterminated string.", s.Line)
+		// 		s.UnexpectedCharError = true
+		// 		break
+		// 	}
+		// 	t.Lexeme = buf.String()
+		// 	t.Literal = buf.String()
+		// 	s.TokenList.append(*t)
+		// 	break
+		//
                 else => {
                     try stderr_writer.print("[line {}] Error: Unexpected character: {c}\n", .{ self.line, char });
                     self.scanError = error.UnexpectedError;
