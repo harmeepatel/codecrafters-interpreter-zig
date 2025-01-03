@@ -75,25 +75,6 @@ pub fn scan(self: *Self) !void {
         }
     }
 
-    // MainLoop:
-    // 	for iChar, char := range s.Source {
-    // 		s.Icurr = uint(iChar)
-    //
-    // 		if char == NEW_LINE.char1() {
-    // 			s.Line++
-    // 		}
-    // 		if s.SkipChar {
-    // 			s.SkipChar = false
-    // 			continue
-    // 		}
-    // 		if s.SkipNext > 0 {
-    // 			for s.SkipNext != 0 {
-    // 				s.SkipNext--
-    // 				continue MainLoop
-    // 			}
-    // 		}
-    //
-    // 		switch {
     // 		case char == EQUAL.char1():
     // 			if EQUAL_EQUAL.char2() >= 0 && s.peek() == EQUAL_EQUAL.char2() {
     // 				s.TokenList.append(Token{EQUAL_EQUAL, EQUAL_EQUAL.Literal, NULL, s.Line})
@@ -261,13 +242,6 @@ pub fn scan(self: *Self) !void {
     // 			}
     // 			s.TokenList.append(*t)
     // 			break
-    //
-    // 		default:
-    // 			println("[line %d] Error: Unexpected character: %c", s.Line, char)
-    // 			s.UnexpectedCharError = true
-    // 			break
-    // 		}
-    // 	}
     //
     // 	s.TokenList.append(Token{EOF, EOF.Literal, NULL, s.Line})
     try self.tokenList.append(Token.New(TokenType.EOF, "", Literal.None()));
