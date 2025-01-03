@@ -1,5 +1,6 @@
 const std = @import("std");
-const print = std.debug.print;
+const Scanner = @import("./Scanner.zig");
+const dbg_print = std.debug.print;
 const page_alloc = std.heap.page_allocator;
 
 var command = std.ArrayList(u8).init(page_alloc);
@@ -16,13 +17,13 @@ fn isValidCommand(needle: []u8) bool {
 
 fn init() !void {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
-    print("Logs from your program will appear here!\n", .{});
+    dbg_print("Logs from your program will appear here!\n", .{});
 
     const args = try std.process.argsAlloc(page_alloc);
     defer std.process.argsFree(page_alloc, args);
 
     if (args.len < 3) {
-        print("Usage: ./your_program.sh tokenize <filename>\n", .{});
+        dbg_print("Usage: ./your_program.sh tokenize <filename>\n", .{});
         std.process.exit(1);
     }
 
@@ -32,7 +33,7 @@ fn init() !void {
     const cmd_slc = try command.toOwnedSlice();
     defer page_alloc.free(cmd_slc);
     if (!isValidCommand(cmd_slc)) {
-        print("Unknown command: {s}\n", .{cmd_slc});
+        dbg_print("Unknown command: {s}\n", .{cmd_slc});
         std.process.exit(1);
     }
 }
@@ -41,14 +42,11 @@ pub fn main() !void {
     _ = try init();
     const file = try filename.toOwnedSlice();
     defer page_alloc.free(file);
+
     const file_contents = try std.fs.cwd().readFileAlloc(page_alloc, file, std.math.maxInt(usize));
     defer page_alloc.free(file_contents);
 
-    // Uncomment this block to pass the first stage
-    if (file_contents.len > 0) {
-        print("Scanner not implemented", .{});
-        std.process.exit(0);
-    } else {
-        try std.io.getStdOut().writer().print("EOF  null\n", .{}); // Placeholder, remove this line when implementing the scanner
-    }
+    var scanner = Scanner.New(file_contents);
+    _ = try scanner.scan();
+    scanner.print();
 }
