@@ -2,6 +2,7 @@ const std = @import("std");
 // const Scanner = @import("Scanner.zig");
 const dbg_print = std.debug.print;
 const stdout_writer = std.io.getStdOut().writer(); // Placeholder, remove this line when implementing the scanner
+const stderr_writer = std.io.getStdErr().writer(); // Placeholder, remove this line when implementing the scanner
 const page_alloc = std.heap.page_allocator;
 
 var command = std.ArrayList(u8).init(page_alloc);
@@ -51,6 +52,7 @@ pub fn main() !void {
     try scanner.print();
 }
 
+// token
 const Token = struct {
     type: TokenType,
     lexeme: []const u8,
@@ -163,6 +165,7 @@ fn parseNumber(num: []const u8) f64 {
     };
 }
 
+// scanner
 const alloc_print = std.fmt.allocPrint;
 const ScannerError = error{UnexpectedError};
 
@@ -224,7 +227,7 @@ const Scanner = struct {
                 ';' => try self.tokenList.append(Token.New(TokenType.SEMICOLON, ";", Literal.None())),
                 '*' => try self.tokenList.append(Token.New(TokenType.STAR, "*", Literal.None())),
                 else => {
-                    try stdout_writer.print("[line {}] Error: Unexpected character: {c}\n", .{ self.line, char });
+                    try stderr_writer.print("[line {}] Error: Unexpected character: {c}\n", .{ self.line, char });
                     self.scanError = error.UnexpectedError;
                 },
                 '\t', ' ' => {},
