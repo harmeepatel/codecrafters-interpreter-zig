@@ -3,10 +3,9 @@ const Scanner = @import("scanner.zig");
 const dbg_print = std.debug.print;
 const page_alloc = std.heap.page_allocator;
 
+const valid_commands = [_][]const u8{"tokenize"};
 var command = std.ArrayList(u8).init(page_alloc);
 var filename = std.ArrayList(u8).init(page_alloc);
-
-const valid_commands = [_][]const u8{"tokenize"};
 
 fn isValidCommand(needle: []u8) bool {
     for (valid_commands) |cmd| {

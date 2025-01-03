@@ -10,7 +10,10 @@ const page_alloc = std.heap.page_allocator;
 const stdout_writer = std.io.getStdOut().writer();
 const stderr_writer = std.io.getStdErr().writer();
 
-const ScannerError = error{UnexpectedError};
+const ScannerError = error{
+    UnexpectedCharacter,
+    UnterminatedString,
+};
 const Self = @This();
 
 icurr: usize,
@@ -45,7 +48,7 @@ pub fn print(self: Self) !void {
         try token.print();
     }
     if (self.scanError) |err| {
-        if (err == error.UnexpectedError) {
+        if (err == error.UnexpectedCharacter or err == error.UnterminatedString) {
             std.process.exit(65);
         }
     }
@@ -122,32 +125,31 @@ pub fn scan(self: *Self) !void {
                 }
                 try self.tokenList.append(Token.New(TokenType.SLASH, "/", Literal.None(), self.line));
             },
-            '"' => {},
-
-            // case char == DOUBLE_QUOTE.char1():
-            // 	t := new(Token)
-            // 	t.Type = STRING
-            // 	var buf bytes.Buffer
-            // 	var i = iChar + 1
-            // 	for ; i < len(s.Source) && rune(s.Source[i]) != DOUBLE_QUOTE.char1(); i++ {
-            // 		r := rune(s.Source[i])
-            // 		buf.WriteRune(r)
-            // 		s.SkipNext++
-            // 	}
-            // 	s.SkipNext++
-            // 	if i >= len(s.Source) {
-            // 		println("[line %d] Error: Unterminated string.", s.Line)
-            // 		s.UnexpectedCharError = true
-            // 		break
-            // 	}
-            // 	t.Lexeme = buf.String()
-            // 	t.Literal = buf.String()
-            // 	s.TokenList.append(*t)
-            // 	break
-            //
+            '"' => {
+                const start: usize = self.icurr + 1;
+                var end: usize = start;
+                while (end <= self.source.len) : (end += 1) {
+                    const c = self.source[end];
+                    self.skipNext += 1;
+                    if (c == '\n') {
+                        try stderr_writer.print("[line {}] Error: Unterminated string.\n", .{self.line});
+                        self.scanError = error.UnterminatedString;
+                        self.line += 1;
+                        continue :CharLoop;
+                    }
+                    if (c == '"') {
+                        break;
+                    }
+                }
+                if (start >= self.source.len) {
+                    try stderr_writer.print("[line {}] Error: Unterminated string.\n", .{self.line});
+                    self.scanError = error.UnterminatedString;
+                }
+                try self.tokenList.append(Token.New(TokenType.STRING, self.source[start..end], Literal{ .string = self.source[start..end] }, self.line));
+            },
             else => {
                 try stderr_writer.print("[line {}] Error: Unexpected character: {c}\n", .{ self.line, char });
-                self.scanError = error.UnexpectedError;
+                self.scanError = error.UnexpectedCharacter;
             },
         }
     }

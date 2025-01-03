@@ -112,5 +112,5 @@ pub fn print(self: Self) !void {
         .STRING => try stdout_writer.print("\"{s}\" {s}", .{ self.lexeme, self.literal.toString() }),
         else => try stdout_writer.print("{s} {s}", .{ self.lexeme, self.literal.toString() }),
     }
-    dbg_print("\n", .{});
+    try stdout_writer.print("\n", .{});
 }

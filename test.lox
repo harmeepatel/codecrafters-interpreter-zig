@@ -1,4 +1,6 @@
 // comment
+"string"
+"unterminated
 if (a == 3.14) {
     return "batman"
 }
