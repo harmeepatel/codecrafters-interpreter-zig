@@ -38,7 +38,7 @@ fn init() !void {
 }
 
 pub fn main() !void {
-    _ = try init();
+    try init();
     const file = try filename.toOwnedSlice();
     defer page_alloc.free(file);
 
