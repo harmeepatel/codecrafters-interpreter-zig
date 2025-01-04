@@ -44,7 +44,8 @@ pub fn main() !void {
     const file_contents = try std.fs.cwd().readFileAlloc(page_alloc, file, std.math.maxInt(usize));
     defer page_alloc.free(file_contents);
 
-    var scanner = Scanner.New(file_contents);
+    var scanner = Scanner.New(file_contents, page_alloc);
     _ = try scanner.scan();
     try scanner.print();
+    defer scanner.deinit();
 }

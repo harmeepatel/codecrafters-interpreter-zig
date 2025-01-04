@@ -5,7 +5,6 @@ const TokenList = Token.TokenList;
 const Literal = Token.Literal;
 const dbg_print = std.debug.print;
 const alloc_print = std.fmt.allocPrint;
-const page_alloc = std.heap.page_allocator;
 
 const stdout_writer = std.io.getStdOut().writer();
 const stderr_writer = std.io.getStdErr().writer();
@@ -16,24 +15,30 @@ const ScannerError = error{
 };
 const Self = @This();
 
+allocator: std.mem.Allocator,
 icurr: usize,
 line: usize,
+scanError: ?ScannerError,
 skipChar: bool,
 skipNext: usize,
 source: []const u8,
 tokenList: TokenList,
-scanError: ?ScannerError,
 
-pub fn New(source: []const u8) Self {
+pub fn New(source: []const u8, alloc: std.mem.Allocator) Self {
     return Self{
+        .allocator = alloc,
         .icurr = 0,
         .line = 1,
+        .scanError = null,
         .skipChar = false,
         .skipNext = 0,
         .source = source,
-        .tokenList = TokenList.init(page_alloc),
-        .scanError = null,
+        .tokenList = TokenList.init(alloc),
     };
+}
+
+pub fn deinit(self: Self) void {
+    self.tokenList.deinit();
 }
 
 fn peek(self: Self, char: u8) bool {
@@ -47,10 +52,8 @@ pub fn print(self: Self) !void {
     for (self.tokenList.items) |token| {
         try token.print();
     }
-    if (self.scanError) |err| {
-        if (err == ScannerError.UnexpectedCharacter or err == ScannerError.UnterminatedString) {
-            std.process.exit(65);
-        }
+    if (self.scanError) |_| {
+        std.process.exit(65);
     }
 }
 
@@ -128,22 +131,14 @@ pub fn scan(self: *Self) !void {
             '"' => {
                 const start: usize = self.icurr + 1;
                 var end: usize = start;
-                while (end < self.source.len) : (end += 1) {
-                    const c = self.source[end];
+                while (end < self.source.len - 1 and self.source[end] != '"') : (end += 1) {
                     self.skipNext += 1;
-                    if (c == '\n') {
-                        try stderr_writer.print("[line {}] Error: Unterminated string.\n", .{self.line});
-                        self.scanError = error.UnterminatedString;
-                        self.line += 1;
-                        continue :CharLoop;
-                    }
-                    if (c == '"') {
-                        break;
-                    }
                 }
-                if (start >= self.source.len) {
+                self.skipNext += 1;
+                if (end == self.source.len - 1) {
                     try stderr_writer.print("[line {}] Error: Unterminated string.\n", .{self.line});
                     self.scanError = error.UnterminatedString;
+                    continue :CharLoop;
                 }
                 try self.tokenList.append(Token.New(TokenType.STRING, self.source[start..end], Literal{ .string = self.source[start..end] }, self.line));
             },
