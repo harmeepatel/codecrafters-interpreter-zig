@@ -48,7 +48,7 @@ pub fn print(self: Self) !void {
         try token.print();
     }
     if (self.scanError) |err| {
-        if (err == error.UnexpectedCharacter or err == error.UnterminatedString) {
+        if (err == ScannerError.UnexpectedCharacter or err == ScannerError.UnterminatedString) {
             std.process.exit(65);
         }
     }
