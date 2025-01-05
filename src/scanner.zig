@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const Token = @import("token.zig");
 const TokenType = Token.TokenType;
 const TokenList = Token.TokenList;
@@ -47,12 +48,19 @@ fn peek(self: Self, char: u8) bool {
     }
     return false;
 }
+fn peekAt(self: Self, char: u8, idx: usize) bool {
+    if (idx < self.source.len - 1) {
+        return char == self.source[idx + 1];
+    }
+    return false;
+}
 
 pub fn print(self: Self) !void {
     for (self.tokenList.items) |token| {
         try token.print();
     }
-    if (self.scanError) |_| {
+    if (self.scanError) |err| {
+        dbg_print("{any}", .{err});
         std.process.exit(65);
     }
 }
@@ -81,6 +89,7 @@ pub fn scan(self: *Self) !void {
             ';' => try self.tokenList.append(Token.New(TokenType.SEMICOLON, ";", Literal.None(), self.line)),
             '*' => try self.tokenList.append(Token.New(TokenType.STAR, "*", Literal.None(), self.line)),
             '\t', ' ' => {},
+
             '=' => {
                 if (self.peek('=')) {
                     try self.tokenList.append(Token.New(TokenType.EQUAL_EQUAL, "==", Literal.None(), self.line));
@@ -89,6 +98,7 @@ pub fn scan(self: *Self) !void {
                 }
                 try self.tokenList.append(Token.New(TokenType.EQUAL, "=", Literal.None(), self.line));
             },
+
             '!' => {
                 if (self.peek('=')) {
                     try self.tokenList.append(Token.New(TokenType.BANG_EQUAL, "!=", Literal.None(), self.line));
@@ -97,6 +107,7 @@ pub fn scan(self: *Self) !void {
                 }
                 try self.tokenList.append(Token.New(TokenType.BANG, "!", Literal.None(), self.line));
             },
+
             '<' => {
                 if (self.peek('=')) {
                     try self.tokenList.append(Token.New(TokenType.LESS_EQUAL, "<=", Literal.None(), self.line));
@@ -105,6 +116,7 @@ pub fn scan(self: *Self) !void {
                 }
                 try self.tokenList.append(Token.New(TokenType.LESS, "<", Literal.None(), self.line));
             },
+
             '>' => {
                 if (self.peek('=')) {
                     try self.tokenList.append(Token.New(TokenType.GREATER_EQUAL, ">=", Literal.None(), self.line));
@@ -113,6 +125,7 @@ pub fn scan(self: *Self) !void {
                 }
                 try self.tokenList.append(Token.New(TokenType.GREATER, ">", Literal.None(), self.line));
             },
+
             '/' => {
                 if (self.peek('/')) {
                     for (self.source[self.icurr..]) |c| {
@@ -128,14 +141,15 @@ pub fn scan(self: *Self) !void {
                 }
                 try self.tokenList.append(Token.New(TokenType.SLASH, "/", Literal.None(), self.line));
             },
+
             '"' => {
+                self.skipNext += 1;
                 const start: usize = self.icurr + 1;
                 var end: usize = start;
                 while (end < self.source.len - 1 and self.source[end] != '"') : (end += 1) {
                     self.skipNext += 1;
                 }
-                self.skipNext += 1;
-                if (end == self.source.len - 1) {
+                if (end >= self.source.len - 1 and self.source[end] != '"') {
                     try stderr_writer.print("[line {}] Error: Unterminated string.\n", .{self.line});
                     self.scanError = error.UnterminatedString;
                     continue :CharLoop;
