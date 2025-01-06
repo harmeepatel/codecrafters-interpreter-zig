@@ -218,11 +218,16 @@ pub fn scan(self: *Self) !void {
 
             'a'...'z', 'A'...'Z', '_' => {
                 var end = self.icurr + 1;
-                var c = self.source[self.icurr + 1];
-                while (std.ascii.isAlphabetic(c) or c == '_') {
-                    end += 1;
-                    self.skipNext += 1;
-                    c = self.source[end];
+                for (self.source[self.icurr + 1 ..]) |c| {
+                    switch (c) {
+                        'a'...'z', 'A'...'Z', '_', '0'...'9' => {
+                            end += 1;
+                            self.skipNext += 1;
+                        },
+                        else => {
+                            break;
+                        },
+                    }
                 }
                 try self.tokenList.append(Token.New(
                     TokenType.IDENTIFIER,
