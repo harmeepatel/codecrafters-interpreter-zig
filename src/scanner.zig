@@ -229,6 +229,120 @@ pub fn scan(self: *Self) !void {
                         },
                     }
                 }
+                const ident = self.source[self.icurr..end];
+                if (std.mem.eql(u8, ident, "and")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.AND,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "class")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.CLASS,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "else")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.ELSE,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "eof")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.EOF,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "false")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.FALSE,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "for")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.FOR,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "fun")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.FUN,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "if")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.IF,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "nil")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.NIL,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "or")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.OR,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "print")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.PRINT,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "return")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.RETURN,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "super")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.SUPER,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "this")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.THIS,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "true")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.TRUE,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else if (std.mem.eql(u8, ident, "var")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.VAR,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
+                } else {}
                 try self.tokenList.append(Token.New(
                     TokenType.IDENTIFIER,
                     self.source[self.icurr..end],
