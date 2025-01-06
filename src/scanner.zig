@@ -342,13 +342,14 @@ pub fn scan(self: *Self) !void {
                         Literal.None(),
                         self.line,
                     ));
-                } else {}
-                try self.tokenList.append(Token.New(
-                    TokenType.IDENTIFIER,
-                    self.source[self.icurr..end],
-                    Literal.None(),
-                    self.line,
-                ));
+                } else {
+                    try self.tokenList.append(Token.New(
+                        TokenType.IDENTIFIER,
+                        self.source[self.icurr..end],
+                        Literal.None(),
+                        self.line,
+                    ));
+                }
             },
 
             else => {
