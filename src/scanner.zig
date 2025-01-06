@@ -10,6 +10,15 @@ const alloc_print = std.fmt.allocPrint;
 const stdout_writer = std.io.getStdOut().writer();
 const stderr_writer = std.io.getStdErr().writer();
 
+fn @"error"(line_num: usize, comptime msg: []const u8, args: anytype) void {
+    stderr_writer.print("[line {}] Error: ", .{line_num}) catch {
+        dbg_print("error printing to stderr_writer.\n", .{});
+    };
+    stderr_writer.print(msg ++ "\n", args) catch {
+        dbg_print("error printing to stderr_writer.\n", .{});
+    };
+}
+
 const ScannerError = error{
     UnexpectedCharacter,
     UnterminatedString,
@@ -42,15 +51,30 @@ pub fn deinit(self: Self) void {
     self.tokenList.deinit();
 }
 
-fn peek(self: Self, char: u8) bool {
+fn skipTillWhiteSpace(self: *Self, from: usize) void {
+    for (self.source[from..]) |c| {
+        if (c == ' ' or c == '\n' or c == '\t') {
+            break;
+        }
+        self.skipNext += 1;
+    }
+}
+
+fn peek(self: Self) u8 {
+    if (self.icurr < self.source.len - 1) {
+        return self.source[self.icurr + 1];
+    }
+    return self.source[self.icurr];
+}
+fn peekAt(self: Self, idx: usize) u8 {
+    if (idx < self.source.len - 1) {
+        return self.source[idx + 1];
+    }
+    return self.source[idx];
+}
+fn peekEql(self: Self, char: u8) bool {
     if (self.icurr < self.source.len - 1) {
         return char == self.source[self.icurr + 1];
-    }
-    return false;
-}
-fn peekAt(self: Self, char: u8, idx: usize) bool {
-    if (idx < self.source.len - 1) {
-        return char == self.source[idx + 1];
     }
     return false;
 }
@@ -59,22 +83,21 @@ pub fn print(self: Self) !void {
     for (self.tokenList.items) |token| {
         try token.print();
     }
-    if (self.scanError) |err| {
-        dbg_print("{any}", .{err});
+    if (self.scanError) |_| {
         std.process.exit(65);
     }
 }
 
 pub fn scan(self: *Self) !void {
-    CharLoop: for (self.source, 0..) |char, i| {
-        self.icurr = i;
+    ScanLoop: for (self.source, 0..) |char, icurr| {
+        self.icurr = icurr;
         if (self.skipChar) {
             self.skipChar = false;
-            continue;
+            continue :ScanLoop;
         }
         while (self.skipNext > 0) {
             self.skipNext -= 1;
-            continue :CharLoop;
+            continue :ScanLoop;
         }
         switch (char) {
             '\n' => self.line += 1,
@@ -91,7 +114,7 @@ pub fn scan(self: *Self) !void {
             '\t', ' ' => {},
 
             '=' => {
-                if (self.peek('=')) {
+                if (self.peekEql('=')) {
                     try self.tokenList.append(Token.New(TokenType.EQUAL_EQUAL, "==", Literal.None(), self.line));
                     self.skipChar = true;
                     continue;
@@ -100,7 +123,7 @@ pub fn scan(self: *Self) !void {
             },
 
             '!' => {
-                if (self.peek('=')) {
+                if (self.peekEql('=')) {
                     try self.tokenList.append(Token.New(TokenType.BANG_EQUAL, "!=", Literal.None(), self.line));
                     self.skipChar = true;
                     continue;
@@ -109,7 +132,7 @@ pub fn scan(self: *Self) !void {
             },
 
             '<' => {
-                if (self.peek('=')) {
+                if (self.peekEql('=')) {
                     try self.tokenList.append(Token.New(TokenType.LESS_EQUAL, "<=", Literal.None(), self.line));
                     self.skipChar = true;
                     continue;
@@ -118,7 +141,7 @@ pub fn scan(self: *Self) !void {
             },
 
             '>' => {
-                if (self.peek('=')) {
+                if (self.peekEql('=')) {
                     try self.tokenList.append(Token.New(TokenType.GREATER_EQUAL, ">=", Literal.None(), self.line));
                     self.skipChar = true;
                     continue;
@@ -127,7 +150,7 @@ pub fn scan(self: *Self) !void {
             },
 
             '/' => {
-                if (self.peek('/')) {
+                if (self.peekEql('/')) {
                     for (self.source[self.icurr..]) |c| {
                         switch (c) {
                             '\n' => {
@@ -144,20 +167,74 @@ pub fn scan(self: *Self) !void {
 
             '"' => {
                 self.skipNext += 1;
-                const start: usize = self.icurr + 1;
-                var end: usize = start;
+                var end: usize = self.icurr + 1;
                 while (end < self.source.len - 1 and self.source[end] != '"') : (end += 1) {
                     self.skipNext += 1;
                 }
                 if (end >= self.source.len - 1 and self.source[end] != '"') {
-                    try stderr_writer.print("[line {}] Error: Unterminated string.\n", .{self.line});
+                    @"error"(self.line, "Unterminated string.", .{});
                     self.scanError = error.UnterminatedString;
-                    continue :CharLoop;
+                    continue :ScanLoop;
                 }
-                try self.tokenList.append(Token.New(TokenType.STRING, self.source[start..end], Literal{ .string = self.source[start..end] }, self.line));
+                try self.tokenList.append(Token.New(
+                    TokenType.STRING,
+                    self.source[self.icurr + 1 .. end],
+                    Literal.String(self.source[self.icurr + 1 .. end]),
+                    self.line,
+                ));
             },
+
+            '0'...'9' => {
+                var end = self.icurr + 1;
+                var decimal_encountered = false;
+                for (self.source[self.icurr + 1 ..]) |c| {
+                    switch (c) {
+                        '0'...'9' => {
+                            end += 1;
+                            self.skipNext += 1;
+                        },
+                        '.' => {
+                            if (!std.ascii.isDigit(self.peekAt(end))) {
+                                end += 1;
+                                self.skipTillWhiteSpace(end);
+                                continue :ScanLoop;
+                            }
+                            decimal_encountered = true;
+                            end += 1;
+                            self.skipNext += 1;
+                        },
+                        else => {
+                            break;
+                        },
+                    }
+                }
+                try self.tokenList.append(Token.New(
+                    TokenType.NUMBER,
+                    self.source[self.icurr..end],
+                    Literal.Number(self.source[self.icurr..end]),
+                    self.line,
+                ));
+            },
+
+            'a'...'z', 'A'...'Z' => {
+                var end = self.icurr + 1;
+                for (self.source[self.icurr + 1 ..]) |c| {
+                    if (c == ' ' or c == '\n' or c == '\t') {
+                        break;
+                    }
+                    end += 1;
+                    self.skipNext += 1;
+                }
+                try self.tokenList.append(Token.New(
+                    TokenType.IDENTIFIER,
+                    self.source[self.icurr..end],
+                    Literal.None(),
+                    self.line,
+                ));
+            },
+
             else => {
-                try stderr_writer.print("[line {}] Error: Unexpected character: {c}\n", .{ self.line, char });
+                @"error"(self.line, "Unexpected character: {c}", .{char});
                 self.scanError = error.UnexpectedCharacter;
             },
         }
