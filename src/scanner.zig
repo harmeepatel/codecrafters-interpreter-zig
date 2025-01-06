@@ -342,6 +342,13 @@ pub fn scan(self: *Self) !void {
                         Literal.None(),
                         self.line,
                     ));
+                } else if (std.mem.eql(u8, ident, "while")) {
+                    try self.tokenList.append(Token.New(
+                        TokenType.WHILE,
+                        ident,
+                        Literal.None(),
+                        self.line,
+                    ));
                 } else {
                     try self.tokenList.append(Token.New(
                         TokenType.IDENTIFIER,
