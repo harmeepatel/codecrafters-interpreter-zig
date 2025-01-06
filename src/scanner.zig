@@ -345,7 +345,7 @@ pub fn scan(self: *Self) !void {
                 } else {
                     try self.tokenList.append(Token.New(
                         TokenType.IDENTIFIER,
-                        self.source[self.icurr..end],
+                        ident,
                         Literal.None(),
                         self.line,
                     ));
