@@ -219,7 +219,7 @@ pub fn scan(self: *Self) !void {
             'a'...'z', 'A'...'Z', '_' => {
                 var end = self.icurr + 1;
                 for (self.source[self.icurr + 1 ..]) |c| {
-                    if (c == ' ' or c == '\n' or c == '\t') {
+                    if (c == ' ' or c == '\n' or c == '\t' or c != '_' or !std.ascii.isAlphabetic(c)) {
                         break;
                     }
                     end += 1;
