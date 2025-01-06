@@ -2,4 +2,6 @@
 if (a == 3.14 and b == 4.0 and c == 5 and d == 5..0) {
     return "batman"
 }
+while(var) {
+}
 $
