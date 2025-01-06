@@ -216,7 +216,7 @@ pub fn scan(self: *Self) !void {
                 ));
             },
 
-            'a'...'z', 'A'...'Z' => {
+            'a'...'z', 'A'...'Z', '_' => {
                 var end = self.icurr + 1;
                 for (self.source[self.icurr + 1 ..]) |c| {
                     if (c == ' ' or c == '\n' or c == '\t') {
