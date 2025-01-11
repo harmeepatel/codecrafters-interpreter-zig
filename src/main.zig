@@ -1,9 +1,12 @@
 const std = @import("std");
-const Scanner = @import("scanner.zig");
 const dbg_print = std.debug.print;
 const page_alloc = std.heap.page_allocator;
 
-const valid_commands = [_][]const u8{"tokenize"};
+const Token = @import("token.zig");
+const Scanner = @import("scanner.zig");
+const Parser = @import("parser.zig");
+
+const valid_commands = [_][]const u8{ "tokenize", "parse" };
 var command = std.ArrayList(u8).init(page_alloc);
 var filename = std.ArrayList(u8).init(page_alloc);
 
@@ -28,10 +31,8 @@ fn init() !void {
     try command.appendSlice(args[1]);
     try filename.appendSlice(args[2]);
 
-    const cmd_slc = try command.toOwnedSlice();
-    defer page_alloc.free(cmd_slc);
-    if (!isValidCommand(cmd_slc)) {
-        dbg_print("Unknown command: {s}\n", .{cmd_slc});
+    if (!isValidCommand(command.items)) {
+        dbg_print("Unknown command: {s}\n", .{command.items});
         std.process.exit(1);
     }
 }
@@ -44,8 +45,16 @@ pub fn main() !void {
     const file_contents = try std.fs.cwd().readFileAlloc(page_alloc, file, std.math.maxInt(usize));
     defer page_alloc.free(file_contents);
 
-    var scanner = Scanner.New(file_contents, page_alloc);
-    _ = try scanner.scan();
-    try scanner.print();
+    var scanner = Scanner.init(file_contents, page_alloc);
     defer scanner.deinit();
+    try scanner.tokenize();
+
+    var parser = Parser.init(scanner.token_list);
+    // defer parser.deinit();
+
+    if (std.mem.eql(u8, command.items, "tokenize")) {
+        scanner.print();
+    } else if (std.mem.eql(u8, command.items, "parse")) {
+        parser.print();
+    }
 }
